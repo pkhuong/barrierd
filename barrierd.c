@@ -19,7 +19,11 @@
 #include "drop.h"
 #include "ebpf_state.h"
 #include "map.h"
+#include "parse_stat.h"
 #include "setup.h"
+
+/* Try to use stat if we're stuck for more than 10ms. */
+static const uint64_t stat_after_ns = 10 * 1000 * 1000UL;
 
 /* We don't care about improving our timestamp by less than 100 us. */
 static const uint64_t min_latency_ns = 100000;
@@ -38,6 +42,13 @@ static uint64_t *per_cpu_timestamps;
 
 /* Writable mmap of the barrierd page. */
 static struct barrierd_mapped_data *mapped_data;
+
+/*
+ * Updated with info from /proc/stat every now and then.
+ *
+ * NULL if /proc/stat could not be opened.
+ */
+static struct parse_stat *stat_data;
 
 static inline int bpf(enum bpf_cmd cmd, union bpf_attr *attr,
 			  unsigned int size)
@@ -103,7 +114,7 @@ static void set_watermark(uint64_t ts)
 
         r = bpf(BPF_MAP_UPDATE_ELEM, &attr, sizeof(attr));
         if (r < 0) {
-                perror("bpf(BPF_MAP_UPDATE_ELEM) failed");
+                perror("bpf(BPF_MAP_UPDATE_ELEM) failed in set_watermark");
                 exit(1);
         }
 
@@ -137,6 +148,11 @@ static bool update_timestamps(uint64_t vtime)
         for (size_t i = 0; i < state.ncpu; i++) {
                 uint64_t prev = mapped_data->per_cpu[i].last_interrupt_ns;
                 uint64_t ts = per_cpu_timestamps[i];
+
+                if (stat_data != NULL &&
+                    stat_data->per_cpu_stat[i].last_interrupt_ns > ts) {
+                        ts = stat_data->per_cpu_stat[i].last_interrupt_ns;
+                }
 
                 if (ts <= prev) {
                         continue;
@@ -243,8 +259,10 @@ static bool update_data(void)
 
 /*
  * Waits on epoll for new perf events (enqueued by our eBPF script).
+ *
+ * Returns true if we were woken up before the timeout.
  */
-static void wait_for_updates(void)
+static bool wait_for_updates(void)
 {
         struct epoll_event events[64];
         uint64_t now = now_ns();
@@ -277,7 +295,7 @@ static void wait_for_updates(void)
                         r, (now_ns() - now) * (1e3 / 1e9));
         }
 
-        return;
+        return r > 0;
 }
 
 int main(int argc, char **argv)
@@ -306,6 +324,7 @@ int main(int argc, char **argv)
                 attach_to_tracepoint_id(&state, id);
         }
 
+        stat_data = parse_stat_create(state.ncpu);
         mapped_data = map_file(argv[1], &state);
 
         /* The setup is all done. We can drop all but a few syscalls now. */
@@ -317,19 +336,36 @@ int main(int argc, char **argv)
          * future.
          */
         set_watermark(now_ns() + min_latency_ns);
+        /* Read /proc/stat at least once. */
+        parse_stat_update(stat_data, now_ns());
+
         for (;;) {
                 if (verbose) {
                         fprintf(stderr, "Now: %"PRIu64".\n", now_ns());
                 }
 
-                if (!update_data()) {
-                        if (verbose) {
-                                fprintf(stderr, "Sleep at: %"PRIu64".\n",
-                                        now_ns());
-                        }
-
-                        wait_for_updates();
+                if (update_data()) {
+                        continue;
                 }
+
+                if (verbose) {
+                        fprintf(stderr, "Sleep at: %"PRIu64".\n",
+                                now_ns());
+                }
+
+                /* If we woke up and we're not too far behind, loop back. */
+                if (wait_for_updates()) {
+                        uint64_t last_intr = mapped_data->last_interrupt_ns;
+                        uint64_t now = now_ns();
+
+                        if (now > last_intr &&
+                            now - last_intr < stat_after_ns) {
+                                continue;
+                        }
+                }
+
+                /* Otherwise, consider the slow /proc/stat update path. */
+                parse_stat_update(stat_data, now_ns());
         }
 
         return 0;

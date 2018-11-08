@@ -14,6 +14,7 @@ HEADERS=include/barrierd.h	\
 	libbpf-macros.h		\
 	line_iterator.h		\
 	map.h			\
+	parse_stat.h		\
 	setup.h			\
 	signal.ebpf.inc
 
@@ -25,6 +26,7 @@ OBJECTS=attach.o		\
 	license.o		\
 	line_iterator.o		\
 	map.o			\
+	parse_stat.o		\
 	setup.o
 
 SCRIPTS=signal.epbf.inc
