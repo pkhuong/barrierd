@@ -1,7 +1,6 @@
 #include "setup.h"
 
 #include <asm/unistd.h>
-#include <assert.h>
 #include <limits.h>
 #include <linux/bpf.h>
 #include <linux/perf_event.h>
@@ -58,7 +57,7 @@ static int create_map(enum bpf_map_type type, uint32_t key_size,
 }
 
 /*
- * Returns the page siez. Dies on error.
+ * Returns the page size. Dies on error.
  */
 static void get_page_size(void)
 {
@@ -94,8 +93,14 @@ static size_t ncpu(void)
                 exit(1);
         }
 
-        assert(configured == online &&
-               "All configured processors must be online.");
+        if (configured != online) {
+                fprintf(stderr,
+                        "All %ld configured processors must be online"
+                        " (found %ld).\n",
+                        configured, online);
+                exit(1);
+        }
+
         return (size_t)configured;
 }
 
