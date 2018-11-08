@@ -23,13 +23,12 @@ void line_iterator_init(struct line_iterator *it, int fd)
 void line_iterator_reset(struct line_iterator *it)
 {
         off_t r;
+        int fd = it->fd;
 
-        r = lseek(it->fd, 0, SEEK_SET);
+        r = lseek(fd, 0, SEEK_SET);
         assert(r >= 0);
 
-        it->consumed = 0;
-        it->remaining = 0;
-        it->eof = false;
+        line_iterator_init(it, fd);
         return;
 }
 
