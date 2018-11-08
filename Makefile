@@ -15,8 +15,7 @@ HEADERS=include/barrierd.h	\
 	line_iterator.h		\
 	map.h			\
 	parse_stat.h		\
-	setup.h			\
-	signal.ebpf.inc
+	setup.h
 
 GENERATED=license.c
 
