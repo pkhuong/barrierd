@@ -8,12 +8,12 @@ are satisfied more quickly (on the order of 0.1-4 ms on my machine,
 rather than 25-80 ms).
 
 barrierd hides all the BPF logic in a daemon, which writes the barrier
-timestamp data to an mmap-able file.  The daemon performs each write
-with atomic 64-bit stores, so userspace can read the data without
+timestamp data to an mmap-able file.  The daemon performs all writes
+with atomic 64-bit stores, so applications can read the data without
 locking. Moreover, the daemon also treats certain fields (documented
 in `include/barrierd.h`) as futex words, and wakes up all waiters on
 any change to these fields.  Applications are thus able to wait for a
-barrier without spinning in userspace.
+barrier without spinning.
 
 More details on how interrupt timestamps are useful may be found at
 https://www.pvk.ca/XXX.
@@ -32,15 +32,16 @@ pre-created maps).
 
 The daemon should be invoked with the path to a file that will be
 mapped by clients, followed by a list of tracepoint ids.  The mappable
-file will be created with mode 0644 if necessary, and will be grown as
-necessary to fit the number of cpus. The daemon also creates a private
-(0600) lock file alongside the mappable file, to ensure mutual
-exclusion between daemons.  The id for any tracepoint may be found by
-reading `/sys/kernel/debug/tracing/events/$tracepoint/id`, 
-where `/sys/kernel/debug` is the default debugfs mountpoint.  Any
-tracepoint is valid for correctness; in practice, we want to make
-tracepoints are triggered frequently enough (more than once a
-millisecond), but not too much.  A reasonable default might be:
+file will be created with mode 0644 if absent, and grown as necessary
+to fit the number of cpus. The daemon also creates a private (0600)
+lock file alongside the mappable file, to ensure mutual exclusion
+between daemons.  The id for any tracepoint may be found by reading
+`/sys/kernel/debug/tracing/events/$tracepoint/id`, where
+`/sys/kernel/debug` is the default debugfs mountpoint.  Any set of
+tracepoints is valid for correctness.  In practice, we want to pick
+tracepoints that are triggered frequently enough (more than once a
+millisecond), but not so much that the tracepoint noticeably slows
+down the system.  A reasonable default might be:
 
 * `irq/softirq_entry`
 * `irq_vectors/local_timer_entry`
@@ -49,8 +50,8 @@ millisecond), but not too much.  A reasonable default might be:
 We can run barrierd with these tracepoints as follows:
 
     # export TRACE_PATH=/sys/kernel/debug/tracing/events/
-    # ./barrierd /tmp/test/public_file \
-        `cat $TRACE_PATH/irq/softirq_entry/id` \
+    # ./barrierd /tmp/test/public_file                     \
+        `cat $TRACE_PATH/irq/softirq_entry/id`             \
         `cat $TRACE_PATH/irq_vectors/local_timer_entry/id` \
         `cat $TRACE_PATH/sched/sched_switch/id`
     Attaching to tracepoint 127.
@@ -61,8 +62,8 @@ We can run barrierd with these tracepoints as follows:
 
 For more information, export `VERBOSE`:
 
-    # VERBOSE=1 ./barrierd /tmp/test/public_file \
-        `cat $TRACE_PATH/irq/softirq_entry/id` \
+    # VERBOSE=1 ./barrierd /tmp/test/public_file           \
+        `cat $TRACE_PATH/irq/softirq_entry/id`             \
         `cat $TRACE_PATH/irq_vectors/local_timer_entry/id` \
         `cat $TRACE_PATH/sched/sched_switch/id`
     Attaching to tracepoint 127.
@@ -87,7 +88,7 @@ For more information, export `VERBOSE`:
     epoll_wait returned 1 after 0.043 ms.
 
 `perf stat` will give you an overview of how often any tracepoint
-triggers. Make sure to test this on several CPUs, the breakdown of
+triggers. Make sure to test this on several CPUs, as the breakdown of
 events varies across cores.
 
     sudo perf stat -C 5 -e \
