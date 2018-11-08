@@ -112,24 +112,46 @@ barriers.  See samples/client.c for an example.
 
 
     $ ./client /tmp/test/public_file
-    Wait on ns finished after 1.600 ms and 1 iter.
-    Wait on vtime finished after 11.903 ms and 2 iter (success).
-    Wait on ns finished after 0.102 ms and 1 iter.
-    Wait on vtime finished after 7.969 ms and 2 iter (success).
-    Wait on ns finished after 2.808 ms and 1 iter.
-    Wait on vtime finished after 5.974 ms and 1 iter (success).
-    Wait on ns finished after 0.576 ms and 1 iter.
-    Wait on vtime finished after 4.248 ms and 2 iter (success).
-    Wait on ns finished after 1.159 ms and 1 iter.
-    Wait on vtime finished after 6.390 ms and 1 iter (success).
+    Wait on mprotect IPI finished after 0.004 ms.
+    Wait on ns finished after 2.383 ms and 2 iter.
+    Wait on vtime finished after 9.625 ms and 2 iter (success).
+    Wait on RCU membarrier finished after 24.063 ms.
+    Wait on mprotect IPI finished after 0.006 ms.
+    Wait on ns finished after 0.941 ms and 1 iter.
+    Wait on vtime finished after 10.417 ms and 2 iter (success).
+    Wait on RCU membarrier finished after 55.095 ms.
+    Wait on mprotect IPI finished after 0.002 ms.
+    Wait on ns finished after 0.720 ms and 1 iter.
+    Wait on vtime finished after 8.190 ms and 2 iter (success).
+    Wait on RCU membarrier finished after 29.038 ms.
+    Wait on mprotect IPI finished after 0.003 ms.
+    Wait on ns finished after 0.052 ms and 1 iter.
+    Wait on vtime finished after 8.740 ms and 2 iter (success).
+    Wait on RCU membarrier finished after 44.296 ms.
+    Wait on mprotect IPI finished after 0.003 ms.
+    Wait on ns finished after 0.580 ms and 1 iter.
+    Wait on vtime finished after 9.762 ms and 2 iter (success).
+    Wait on RCU membarrier finished after 31.217 ms.
+    Wait on mprotect IPI finished after 0.002 ms.
+    Wait on ns finished after 1.968 ms and 1 iter.
+    Wait on vtime finished after 10.208 ms and 2 iter (success).
+    Wait on RCU membarrier finished after 51.490 ms.
 
-Detecting barriers with `last_interrupt_ns` is faster than using
+The fastest way to get a reverse barrier is still to actively trigger
+IPIs; however, the overhead scales badly with the number of cores
+(each waiter ends up sending an IPI to every core).  After that,
+detecting barriers with `last_interrupt_ns` is faster than using
 virtual time: it usually completes after a single futex wait, in one
 milliseconds or two (the worst case on my machine is 4 milliseconds).
 Virtual time is much coarser, and often needs multiple updates over
-several milliseconds.  A client should only use virtual time
-heuristically, e.g., to eagerly tag items in the middle of a hot loop.
-Once the client really waits on a barrier, it can optimistically
-detect items that can safely be dispatched based on virtual time, but
-rely on real monotonic time to guarantee progress: it's more reliable
-and faster.
+several milliseconds.  Finally, regular non-expedited membarrier is
+even slower than waiting on virtual time, and easily 10x as slow as
+waiting on CLOCK_MONOTONIC.
+
+There is value in using `barrierd` over the membarrier syscall.
+However, a client should only use virtual time heuristically, e.g., to
+eagerly tag items in the middle of a hot loop.  Once the client really
+waits on a barrier, virtual time can still be used to optimistically
+detect items that have passed a barrier. However, virtual time is
+slower to respond than real time, and is vulnerable to starvation; a
+client should only rely on real monotonic time to guarantee progress.

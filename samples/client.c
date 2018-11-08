@@ -1,9 +1,12 @@
 #include <barrierd.h>
 
 #include <asm/unistd.h>
+#include <assert.h>
 #include <ck_pr.h>
 #include <fcntl.h>
 #include <linux/futex.h>
+#include <linux/membarrier.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +16,8 @@
 #include <time.h>
 #include <unistd.h>
 
-const struct barrierd_mapped_data *data;
+static void *page;
+static const struct barrierd_mapped_data *data;
 
 /* Returns the monotonic time (since boot) in nanoseconds. */
 static uint64_t now_ns(void)
@@ -57,6 +61,39 @@ static void futex_wait(const uint64_t *word, uint64_t value)
         syscall(__NR_futex, low_half, FUTEX_WAIT, (uint32_t)value,
                 /*timeout=*/&timeout,
                 /* ignored arguments */NULL, 0);
+}
+
+static void wait_on_membarrier(bool expedited)
+{
+        uint64_t begin = now_ns();
+        uint64_t end;
+        int cmd = expedited
+                ? MEMBARRIER_CMD_GLOBAL_EXPEDITED
+                : MEMBARRIER_CMD_GLOBAL;
+        int r;
+
+        r = syscall(__NR_membarrier, cmd, 0);
+        assert(r == 0);
+        end = now_ns();
+
+        printf("Wait on %s membarrier finished after %.3f ms.\n",
+               (expedited ? "expedited" : "RCU"),
+               (end - begin) * (1e3 / 1e9));
+        return;
+}
+
+static void wait_on_mprotect_ipi(void)
+{
+        uint64_t begin = now_ns();
+        uint64_t end;
+
+        mprotect(page, 4096, PROT_READ);
+        mprotect(page, 4096, PROT_READ | PROT_WRITE);
+        end = now_ns();
+
+        printf("Wait on mprotect IPI finished after %.3f ms.\n",
+               (end - begin) * (1e3 / 1e9));
+        return;
 }
 
 static void wait_on_ns_barrier(void)
@@ -135,11 +172,21 @@ int main(int argc, char **argv)
         }
         close(fd);
 
+        /* Open a page for mprotect IPIs. */
+        page = mmap(NULL, 4096,
+                    PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS,
+                    -1, 0);
+        assert(page != MAP_FAILED);
+
         for (;;) {
-                usleep(1e4 * random() / RAND_MAX);
+                usleep(1e5 * random() / RAND_MAX);
+                wait_on_mprotect_ipi();
+                usleep(1e5 * random() / RAND_MAX);
                 wait_on_ns_barrier();
-                usleep(1e4 * random() / RAND_MAX);
+                usleep(1e5 * random() / RAND_MAX);
                 wait_on_vtime_barrier();
+                usleep(1e5 * random() / RAND_MAX);
+                wait_on_membarrier(false);
         }
 
         return 0;
