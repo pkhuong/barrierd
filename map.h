@@ -11,6 +11,6 @@
  *
  * Returns a writable mmap buffer for the data file.  Dies on error.
  */
-struct barrierd_mapped_data *map_file(const char *path,
-                                      const struct ebpf_state *state);
+struct barrierd_mapped_data *
+map_file(const char *path, const struct ebpf_state *state);
 #endif /* !MAP_H */

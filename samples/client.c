@@ -37,17 +37,17 @@ static uint64_t now_ns(void)
 static void futex_wait(const uint64_t *word, uint64_t value)
 {
         const struct timespec timeout = {
-                /* Impose a 10ms timeout. */
-                .tv_nsec = 10 * 1000 * 1000UL
+            /* Impose a 10ms timeout. */
+            .tv_nsec = 10 * 1000 * 1000UL,
         };
-	const void *low_half;
+        const void *low_half;
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	low_half = word;
+        low_half = word;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	low_half = (uintptr_t)word + sizeof(uint32_t);
+        low_half = (uintptr_t)word + sizeof(uint32_t);
 #else
-# error "__BYTE_ORDER__ must be defined."
+#error "__BYTE_ORDER__ must be defined."
 #endif
 
         if (ck_pr_load_64(word) != value) {
@@ -60,16 +60,15 @@ static void futex_wait(const uint64_t *word, uint64_t value)
          */
         syscall(__NR_futex, low_half, FUTEX_WAIT, (uint32_t)value,
                 /*timeout=*/&timeout,
-                /* ignored arguments */NULL, 0);
+                /* ignored arguments */ NULL, 0);
 }
 
 static void wait_on_membarrier(bool expedited)
 {
         uint64_t begin = now_ns();
         uint64_t end;
-        int cmd = expedited
-                ? MEMBARRIER_CMD_GLOBAL_EXPEDITED
-                : MEMBARRIER_CMD_GLOBAL;
+        int cmd =
+            expedited ? MEMBARRIER_CMD_GLOBAL_EXPEDITED : MEMBARRIER_CMD_GLOBAL;
         int r;
 
         r = syscall(__NR_membarrier, cmd, 0);
@@ -77,8 +76,7 @@ static void wait_on_membarrier(bool expedited)
         end = now_ns();
 
         printf("Wait on %s membarrier finished after %.3f ms.\n",
-               (expedited ? "expedited" : "RCU"),
-               (end - begin) * (1e3 / 1e9));
+               (expedited ? "expedited" : "RCU"), (end - begin) * (1e3 / 1e9));
         return;
 }
 
@@ -104,7 +102,7 @@ static void wait_on_ns_barrier(void)
 
         for (i = 0;; i++) {
                 uint64_t last_interrupt =
-                        ck_pr_load_64(&data->last_interrupt_ns);
+                    ck_pr_load_64(&data->last_interrupt_ns);
 
                 if (last_interrupt > begin) {
                         break;
@@ -130,7 +128,7 @@ static void wait_on_vtime_barrier(void)
 
         for (i = 0;; i++) {
                 uint64_t last_interrupt =
-                        ck_pr_load_64(&data->last_interrupt_vtime);
+                    ck_pr_load_64(&data->last_interrupt_vtime);
 
                 if (last_interrupt > vtime_begin) {
                         break;
@@ -164,8 +162,7 @@ int main(int argc, char **argv)
         }
 
         /* We don't care about the per-CPU data */
-        data = mmap(NULL, sizeof(*data), PROT_READ, MAP_SHARED,
-                    fd, 0);
+        data = mmap(NULL, sizeof(*data), PROT_READ, MAP_SHARED, fd, 0);
         if (data == MAP_FAILED) {
                 perror("mmap");
                 return 1;
@@ -173,9 +170,8 @@ int main(int argc, char **argv)
         close(fd);
 
         /* Open a page for mprotect IPIs. */
-        page = mmap(NULL, 4096,
-                    PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS,
-                    -1, 0);
+        page = mmap(NULL, 4096, PROT_READ | PROT_WRITE,
+                    MAP_SHARED | MAP_ANONYMOUS, -1, 0);
         assert(page != MAP_FAILED);
 
         for (;;) {

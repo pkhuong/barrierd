@@ -10,20 +10,20 @@
 #define ARRAY_SIZE(X) (sizeof(X) / sizeof((X)[0]))
 
 static const int fully_allowed_syscalls[] = {
-        SCMP_SYS(read),
-        SCMP_SYS(clock_gettime),
-        SCMP_SYS(clock_nanosleep),
-        SCMP_SYS(epoll_wait_old),
-        SCMP_SYS(epoll_wait),
-        SCMP_SYS(exit),
-        SCMP_SYS(futex),
-        SCMP_SYS(nanosleep),
-        SCMP_SYS(rt_sigreturn),
+    SCMP_SYS(read),
+    SCMP_SYS(clock_gettime),
+    SCMP_SYS(clock_nanosleep),
+    SCMP_SYS(epoll_wait_old),
+    SCMP_SYS(epoll_wait),
+    SCMP_SYS(exit),
+    SCMP_SYS(futex),
+    SCMP_SYS(nanosleep),
+    SCMP_SYS(rt_sigreturn),
 };
 
 static scmp_filter_ctx ctx = NULL;
 
-/* 
+/*
  * Fully whitelists every syscall in fully_allowed_syscalls.
  *
  * Returns true on success.
@@ -46,8 +46,7 @@ static bool whitelist_with_arg(int syscall, const int arg_values[],
                                size_t nvalues, const char *context)
 {
         for (size_t i = 0; i < nvalues; i++) {
-                if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, syscall,
-                                     1,
+                if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, syscall, 1,
                                      SCMP_A0(SCMP_CMP_EQ, arg_values[i])) < 0) {
                         perror(context);
                         return false;
@@ -60,7 +59,7 @@ static bool whitelist_with_arg(int syscall, const int arg_values[],
 /* Allow write(2) to stdout and stderr. */
 static bool whitelist_write(void)
 {
-        static const int fds[] = { 1, 2 };
+        static const int fds[] = {1, 2};
 
         return whitelist_with_arg(SCMP_SYS(write), fds, sizeof(fds),
                                   "seccomp_rule_add (whitelist_write) failed");
@@ -70,8 +69,8 @@ static bool whitelist_write(void)
 static bool whitelist_bpf(void)
 {
         static const int actions[] = {
-                BPF_MAP_LOOKUP_ELEM,
-                BPF_MAP_UPDATE_ELEM,
+            BPF_MAP_LOOKUP_ELEM,
+            BPF_MAP_UPDATE_ELEM,
         };
 
         return whitelist_with_arg(SCMP_SYS(bpf), actions, sizeof(actions),
@@ -81,8 +80,7 @@ static bool whitelist_bpf(void)
 /* Allow lseek(?, 0, SEEK_SET). */
 static bool whitelist_lseek(void)
 {
-        if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(lseek),
-                             2,
+        if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(lseek), 2,
                              SCMP_A1(SCMP_CMP_EQ, 0),
                              SCMP_A2(SCMP_CMP_EQ, SEEK_SET)) >= 0) {
                 return true;

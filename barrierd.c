@@ -50,10 +50,9 @@ static struct barrierd_mapped_data *mapped_data;
  */
 static struct parse_stat *stat_data;
 
-static inline int bpf(enum bpf_cmd cmd, union bpf_attr *attr,
-			  unsigned int size)
+static inline int bpf(enum bpf_cmd cmd, union bpf_attr *attr, unsigned int size)
 {
-	return syscall(__NR_bpf, cmd, attr, size);
+        return syscall(__NR_bpf, cmd, attr, size);
 }
 
 /* Returns the monotonic time (since boot) in nanoseconds. */
@@ -77,21 +76,20 @@ static uint64_t now_ns(void)
  */
 static void wake_up(uint64_t *dst, uint64_t value)
 {
-	const void *low_half;
+        const void *low_half;
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	low_half = dst;
+        low_half = dst;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-	low_half = (uintptr_t)dst + sizeof(uint32_t);
+        low_half = (uintptr_t)dst + sizeof(uint32_t);
 #else
-# error "__BYTE_ORDER__ must be defined."
+#error "__BYTE_ORDER__ must be defined."
 #endif
 
         ck_pr_store_64(dst, value);
         ck_pr_fence_store();
-	syscall(__NR_futex, low_half,
-		FUTEX_WAKE, INT_MAX,
-		/* ignored arguments */NULL, NULL, 0);
+        syscall(__NR_futex, low_half, FUTEX_WAKE, INT_MAX,
+                /* ignored arguments */ NULL, NULL, 0);
         return;
 }
 
@@ -105,10 +103,10 @@ static void set_watermark(uint64_t ts)
 {
         uint32_t key = 0;
         union bpf_attr attr = {
-                .map_fd = state.watermark_fd,
-                .key    = (uintptr_t)&key,
-                .value  = (uintptr_t)&ts,
-                .flags  = BPF_ANY,
+            .map_fd = state.watermark_fd,
+            .key = (uintptr_t)&key,
+            .value = (uintptr_t)&ts,
+            .flags = BPF_ANY,
         };
         int r;
 
@@ -132,9 +130,9 @@ static bool update_timestamps(uint64_t vtime)
 {
         uint32_t key = 0;
         union bpf_attr attr = {
-                .map_fd = state.timestamp_map_fd,
-                .key    = (uintptr_t)&key,
-                .value  = (uintptr_t)per_cpu_timestamps,
+            .map_fd = state.timestamp_map_fd,
+            .key = (uintptr_t)&key,
+            .value = (uintptr_t)per_cpu_timestamps,
         };
         int r;
         bool any_change = false;
@@ -160,12 +158,12 @@ static bool update_timestamps(uint64_t vtime)
 
                 any_change = true;
                 if (verbose) {
-                        fprintf(stderr, "CPU %zu -> %"PRIu64" (%"PRIu64").\n",
-                                i, ts, ts - prev);
+                        fprintf(stderr,
+                                "CPU %zu -> %" PRIu64 " (%" PRIu64 ").\n", i,
+                                ts, ts - prev);
                 }
 
-                ck_pr_store_64(&mapped_data->per_cpu[i].last_interrupt_ns,
-                               ts);
+                ck_pr_store_64(&mapped_data->per_cpu[i].last_interrupt_ns, ts);
                 ck_pr_store_64(&mapped_data->per_cpu[i].last_interrupt_vtime,
                                vtime);
         }
@@ -251,9 +249,9 @@ static bool update_data(void)
         }
 
         /*
-          * The watermark that was set before this call to update_data()
-          * is still valid; we will not miss any wake-up if we epoll.
-          */
+         * The watermark that was set before this call to update_data()
+         * is still valid; we will not miss any wake-up if we epoll.
+         */
         return false;
 }
 
@@ -270,10 +268,10 @@ static bool wait_for_updates(void)
 
         if (mapped_data->last_interrupt_ns + min_latency_ns > now) {
                 uint64_t deadline =
-                        mapped_data->last_interrupt_ns + min_latency_ns;
+                    mapped_data->last_interrupt_ns + min_latency_ns;
 
                 if (verbose) {
-                        fprintf(stderr, "usleep for %"PRIu64"ns.\n",
+                        fprintf(stderr, "usleep for %" PRIu64 "ns.\n",
                                 deadline - now);
                 }
 
@@ -291,8 +289,8 @@ static bool wait_for_updates(void)
         }
 
         if (verbose) {
-                fprintf(stderr, "epoll_wait returned %i after %.3f ms.\n",
-                        r, (now_ns() - now) * (1e3 / 1e9));
+                fprintf(stderr, "epoll_wait returned %i after %.3f ms.\n", r,
+                        (now_ns() - now) * (1e3 / 1e9));
         }
 
         return r > 0;
@@ -312,7 +310,7 @@ int main(int argc, char **argv)
         }
 
         verbose = (getenv("VERBOSE") != NULL);
-        
+
         setup(&state);
 
         per_cpu_timestamps = calloc(state.ncpu, sizeof(*per_cpu_timestamps));
@@ -341,7 +339,7 @@ int main(int argc, char **argv)
 
         for (;;) {
                 if (verbose) {
-                        fprintf(stderr, "Now: %"PRIu64".\n", now_ns());
+                        fprintf(stderr, "Now: %" PRIu64 ".\n", now_ns());
                 }
 
                 if (update_data()) {
@@ -349,8 +347,7 @@ int main(int argc, char **argv)
                 }
 
                 if (verbose) {
-                        fprintf(stderr, "Sleep at: %"PRIu64".\n",
-                                now_ns());
+                        fprintf(stderr, "Sleep at: %" PRIu64 ".\n", now_ns());
                 }
 
                 /* If we woke up and we're not too far behind, loop back. */

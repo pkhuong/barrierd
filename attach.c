@@ -8,9 +8,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-static inline int perf_event_open(struct perf_event_attr *attr,
-                                  pid_t pid, int cpu, int group_fd,
-                                  unsigned long flags)
+static inline int perf_event_open(struct perf_event_attr *attr, pid_t pid,
+                                  int cpu, int group_fd, unsigned long flags)
 {
         return syscall(__NR_perf_event_open, attr, pid, cpu, group_fd, flags);
 }
@@ -18,11 +17,11 @@ static inline int perf_event_open(struct perf_event_attr *attr,
 void attach_to_tracepoint_id(const struct ebpf_state *state, int id)
 {
         struct perf_event_attr attr = {
-                .type = PERF_TYPE_TRACEPOINT,
-                .sample_type = PERF_SAMPLE_RAW,
-                .sample_period = 1,
-                .wakeup_events = 1,
-                .config = id,
+            .type = PERF_TYPE_TRACEPOINT,
+            .sample_type = PERF_SAMPLE_RAW,
+            .sample_period = 1,
+            .wakeup_events = 1,
+            .config = id,
         };
         int perf_fd;
         int r;

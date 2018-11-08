@@ -1,0 +1,15 @@
+---
+BasedOnStyle: LLVM
+AllowShortFunctionsOnASingleLine: Empty
+BreakBeforeBraces: Linux
+ContinuationIndentWidth: 4
+IncludeCategories:
+- Priority: 4
+  Regex: <.+>
+- Priority: 1
+  Regex: .*
+IncludeIsMainRegex: (_test)?$
+IndentWidth: 8
+MaxEmptyLinesToKeep: 1
+PenaltyReturnTypeOnItsOwnLine: 10
+SpacesBeforeTrailingComments: 2

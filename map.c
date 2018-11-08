@@ -88,12 +88,11 @@ map_data_fd(int data_fd, const struct ebpf_state *state)
 {
         struct barrierd_mapped_data *ret;
         const size_t total_size = sizeof(struct barrierd_mapped_data) +
-                state->ncpu * sizeof(struct barrierd_per_cpu);
+                                  state->ncpu * sizeof(struct barrierd_per_cpu);
 
         ensure_fd_size(data_fd, total_size);
         ret = mmap(NULL, total_size, PROT_READ | PROT_WRITE,
-                   MAP_SHARED | MAP_LOCKED | MAP_POPULATE,
-                   data_fd, 0);
+                   MAP_SHARED | MAP_LOCKED | MAP_POPULATE, data_fd, 0);
         if (ret == MAP_FAILED) {
                 perror("mmap(data_fd) failed");
                 exit(1);

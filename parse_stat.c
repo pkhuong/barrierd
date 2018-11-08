@@ -30,8 +30,8 @@ struct parse_stat *parse_stat_create(size_t ncpu)
         return ret;
 }
 
-static void update_stat(struct parse_stat *stat, size_t cpu,
-                        uint64_t now_ns, uint64_t signature)
+static void update_stat(struct parse_stat *stat, size_t cpu, uint64_t now_ns,
+                        uint64_t signature)
 {
         struct per_cpu_stat *per_cpu;
 
@@ -69,8 +69,8 @@ static bool confirm_header(struct parse_stat *stat)
 }
 
 /* Returns true if we successfully parsed a CPU stat line. */
-static bool parse_stat_line(struct parse_stat *stat,
-                            size_t *OUT_cpu, uint64_t *OUT_sum)
+static bool
+parse_stat_line(struct parse_stat *stat, size_t *OUT_cpu, uint64_t *OUT_sum)
 {
         size_t linesz;
         const char *line = line_iterator_next(&stat->it, &linesz);
@@ -117,8 +117,7 @@ static bool parse_stat_line(struct parse_stat *stat,
 
 void parse_stat_update(struct parse_stat *stat, uint64_t now_ns)
 {
-        if (stat == NULL ||
-            now_ns < stat->last_read ||
+        if (stat == NULL || now_ns < stat->last_read ||
             stat->last_read - now_ns < MIN_NS_BETWEEN_READS) {
                 return;
         }

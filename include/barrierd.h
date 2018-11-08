@@ -37,7 +37,7 @@ struct barrierd_per_cpu {
 
 struct barrierd_mapped_data {
         uint64_t ncpu;  /* Number of CPUs in the system. */
-        uint64_t vtime;  /* Current virtual time. */
+        uint64_t vtime; /* Current virtual time. */
         /*
          * The min vtime / CLOCK_MONOTONIC time of the last interrupt
          * on all cpus.  The low half of both fields are futex words,

@@ -19,15 +19,13 @@
 
 static size_t page_size = 4096;
 
-static inline int bpf(enum bpf_cmd cmd, union bpf_attr *attr,
-			  unsigned int size)
+static inline int bpf(enum bpf_cmd cmd, union bpf_attr *attr, unsigned int size)
 {
-	return syscall(__NR_bpf, cmd, attr, size);
+        return syscall(__NR_bpf, cmd, attr, size);
 }
 
-static inline int perf_event_open(struct perf_event_attr *attr,
-                                  pid_t pid, int cpu, int group_fd,
-                                  unsigned long flags)
+static inline int perf_event_open(struct perf_event_attr *attr, pid_t pid,
+                                  int cpu, int group_fd, unsigned long flags)
 {
         return syscall(__NR_perf_event_open, attr, pid, cpu, group_fd, flags);
 }
@@ -40,10 +38,10 @@ static int create_map(enum bpf_map_type type, uint32_t key_size,
                       const char *error_context)
 {
         union bpf_attr attr = {
-                .map_type = type,
-                .key_size = key_size,
-                .value_size = value_size,
-                .max_entries = max_entries,
+            .map_type = type,
+            .key_size = key_size,
+            .value_size = value_size,
+            .max_entries = max_entries,
         };
         int fd;
 
@@ -110,9 +108,8 @@ static size_t ncpu(void)
  */
 static int watermark_map(void)
 {
-        return create_map(BPF_MAP_TYPE_ARRAY,
-                          sizeof(uint32_t), sizeof(uint64_t), 1,
-                          "watermark map failed");
+        return create_map(BPF_MAP_TYPE_ARRAY, sizeof(uint32_t),
+                          sizeof(uint64_t), 1, "watermark map failed");
 }
 
 /*
@@ -122,9 +119,8 @@ static int watermark_map(void)
  */
 static int timestamp_map(void)
 {
-        return create_map(BPF_MAP_TYPE_PERCPU_ARRAY,
-                          sizeof(uint32_t), sizeof(uint64_t), 1,
-                          "per-CPU map failed");
+        return create_map(BPF_MAP_TYPE_PERCPU_ARRAY, sizeof(uint32_t),
+                          sizeof(uint64_t), 1, "per-CPU map failed");
 }
 
 /*
@@ -132,9 +128,8 @@ static int timestamp_map(void)
  */
 static int perf_map(size_t ncpu)
 {
-        return create_map(BPF_MAP_TYPE_PERF_EVENT_ARRAY,
-                          sizeof(uint32_t), sizeof(int), ncpu,
-                          "perf event map failed");
+        return create_map(BPF_MAP_TYPE_PERF_EVENT_ARRAY, sizeof(uint32_t),
+                          sizeof(int), ncpu, "perf event map failed");
 }
 
 /*
@@ -163,13 +158,13 @@ static int epoll_create_or_die(void)
  */
 static int make_perf_queue(size_t cpu)
 {
-	struct perf_event_attr attr = {
-		.sample_type = PERF_SAMPLE_RAW,
-		.type = PERF_TYPE_SOFTWARE,
-		.config = PERF_COUNT_SW_BPF_OUTPUT,
-                .sample_period = 1,
-                .wakeup_events = 1,
-	};
+        struct perf_event_attr attr = {
+            .sample_type = PERF_SAMPLE_RAW,
+            .type = PERF_TYPE_SOFTWARE,
+            .config = PERF_COUNT_SW_BPF_OUTPUT,
+            .sample_period = 1,
+            .wakeup_events = 1,
+        };
         int queue_fd;
 
         queue_fd = perf_event_open(&attr, -1, cpu, -1, PERF_FLAG_FD_CLOEXEC);
@@ -186,9 +181,8 @@ static int make_perf_queue(size_t cpu)
         {
                 const void *r;
 
-                r = mmap(NULL, (1 + RING_PAGE_CNT) * page_size,
-                         PROT_READ, MAP_SHARED,
-                         queue_fd, 0);
+                r = mmap(NULL, (1 + RING_PAGE_CNT) * page_size, PROT_READ,
+                         MAP_SHARED, queue_fd, 0);
                 if (r == MAP_FAILED) {
                         perror("mmap of perf ring buffer failed");
                         exit(1);
@@ -217,7 +211,7 @@ static int make_perf_queue(size_t cpu)
 static void add_queue_fd_to_epoll(const struct ebpf_state *state, int queue_fd)
 {
         struct epoll_event event = {
-                .events = EPOLLIN
+            .events = EPOLLIN,
         };
         int r;
 
@@ -237,10 +231,10 @@ static void set_queue_fd_as_perf_fd(int perf_map_fd, int queue_fd, size_t cpu)
 {
         uint32_t key = cpu;
         union bpf_attr attr = {
-                .map_fd = perf_map_fd,
-                .key    = (uintptr_t)&key,
-                .value  = (uintptr_t)&queue_fd,
-                .flags  = BPF_ANY,
+            .map_fd = perf_map_fd,
+            .key = (uintptr_t)&key,
+            .value = (uintptr_t)&queue_fd,
+            .flags = BPF_ANY,
         };
         int r;
 
@@ -259,8 +253,7 @@ static void set_queue_fd_as_perf_fd(int perf_map_fd, int queue_fd, size_t cpu)
  * can't close it (that would stop the wake-ups).
  */
 static void attach_one_perf_event(const struct ebpf_state *state,
-                                  int perf_map_fd,
-                                  size_t cpu)
+                                  int perf_map_fd, size_t cpu)
 {
         int queue_fd;
 
@@ -273,8 +266,7 @@ static void attach_one_perf_event(const struct ebpf_state *state,
 /*
  * Creates and attaches a perf event fd for all online cpus.
  */
-static void attach_perf_events(const struct ebpf_state *state,
-                               int perf_map_fd)
+static void attach_perf_events(const struct ebpf_state *state, int perf_map_fd)
 {
         for (size_t i = 0; i < state->ncpu; i++) {
                 attach_one_perf_event(state, perf_map_fd, i);
@@ -291,19 +283,19 @@ static void attach_perf_events(const struct ebpf_state *state,
  * Returns a non-negative file descriptor on success, -1 on error.
  */
 static int load_program(enum bpf_prog_type type, const struct bpf_insn *insns,
-                        uint32_t insn_cnt, const char *license,
-                        char *log_buf, uint32_t log_buf_sz)
+                        uint32_t insn_cnt, const char *license, char *log_buf,
+                        uint32_t log_buf_sz)
 {
-	union bpf_attr attr = {
-                .prog_type = type,
-                .insn_cnt = insn_cnt,
-                .insns = (uintptr_t)insns,
-                .license = (uintptr_t)license,
-                .log_buf = (uintptr_t)log_buf,
-                .log_size = (log_buf != NULL) ? log_buf_sz : 0,
-                .log_level = (log_buf != NULL) ? 1 : 0,
-                .kern_version = LINUX_VERSION_CODE,
-                .prog_flags = BPF_F_STRICT_ALIGNMENT,
+        union bpf_attr attr = {
+            .prog_type = type,
+            .insn_cnt = insn_cnt,
+            .insns = (uintptr_t)insns,
+            .license = (uintptr_t)license,
+            .log_buf = (uintptr_t)log_buf,
+            .log_size = (log_buf != NULL) ? log_buf_sz : 0,
+            .log_level = (log_buf != NULL) ? 1 : 0,
+            .kern_version = LINUX_VERSION_CODE,
+            .prog_flags = BPF_F_STRICT_ALIGNMENT,
         };
 
         return bpf(BPF_PROG_LOAD, &attr, sizeof(attr));
@@ -318,7 +310,7 @@ static int load_program(enum bpf_prog_type type, const struct bpf_insn *insns,
 static int load_ebpf(const struct ebpf_state *state, int perf_map_fd)
 {
 #if ULONG_MAX < UINT64_MAX
-# error "The eBPF program is only expected to work on 64-bit architectures."
+#error "The eBPF program is only expected to work on 64-bit architectures."
 #endif
         char *buf;
         size_t bufsz = 65536;
@@ -327,21 +319,20 @@ static int load_ebpf(const struct ebpf_state *state, int perf_map_fd)
         int r;
 
         const struct bpf_insn prog[] = {
-#               include "signal.ebpf.inc"
+#include "signal.ebpf.inc"
         };
-        
-        
-        r = load_program(BPF_PROG_TYPE_TRACEPOINT,
-                         prog, sizeof(prog) / sizeof(prog[0]),
-                         "Dual BSD/GPL", NULL, 0);
+
+        r = load_program(BPF_PROG_TYPE_TRACEPOINT, prog,
+                         sizeof(prog) / sizeof(prog[0]), "Dual BSD/GPL", NULL,
+                         0);
         if (r >= 0) {
                 return r;
         }
 
         buf = calloc(bufsz, 1);
-        r = load_program(BPF_PROG_TYPE_TRACEPOINT,
-                         prog, sizeof(prog) / sizeof(prog[0]),
-                         "Dual BSD/GPL", buf, bufsz);
+        r = load_program(BPF_PROG_TYPE_TRACEPOINT, prog,
+                         sizeof(prog) / sizeof(prog[0]), "Dual BSD/GPL", buf,
+                         bufsz);
         if (r < 0) {
                 perror("bpf(BPF_PROG_LOAD) failed");
                 fprintf(stderr, "%.*s\n", (int)bufsz, buf);
