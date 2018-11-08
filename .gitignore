@@ -1,0 +1,7 @@
+barrierd
+client
+*.o
+*~
+*#
+*.swp
+*.swo
