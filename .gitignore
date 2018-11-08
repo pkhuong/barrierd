@@ -1,5 +1,6 @@
 barrierd
 client
+license.c
 *.o
 *~
 *#
