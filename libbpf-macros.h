@@ -1,5 +1,5 @@
 /*
- * This file is a subset of libbpf.h in iovisor's BCC.
+ * This file is a reformatted subset of libbpf.h in iovisor's BCC.
  *
  * Copyright (c) 2015 PLUMgrid, Inc.
  *
