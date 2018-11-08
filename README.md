@@ -4,7 +4,7 @@ barrierd: low latency near-zero overhead asymmetric barriers
 Barrierd offers the same functionality as membarrier(2)'s regular
 (non-EXPEDITED) asymmetric barriers.  However, by tracking interrupts
 instead of waiting for a full RCU grace period, the barrier conditions
-are satisfied more quickly (on the order of 2-4 ms on my machine,
+are satisfied more quickly (on the order of 0.1-4 ms on my machine,
 rather than 25-80 ms).
 
 barrierd hides all the BPF logic in a daemon, which writes the barrier
@@ -25,9 +25,9 @@ How to use the daemon
 
 The daemon needs `CAP_SYS_ADMIN` (i.e., root) not only for setup, but
 also for long-running operations.  The daemon must thus be spawned
-with admin capabilities; and once setup is complete, it will use
-seccomp to whitelist only a few syscalls in a fine-grained manner (in
-particular, the bpf syscall is only allowed to read or write to
+with admin capabilities.  Once setup is complete, it will use seccomp
+to whitelist only a few syscalls in a fine-grained manner (in
+particular, the bpf syscall is only allowed to read from or write to
 pre-created maps).
 
 The daemon should be invoked with the path to a file that will be
@@ -45,7 +45,6 @@ millisecond), but not too much.  A reasonable default might be:
 * `irq/softirq_entry`
 * `irq_vectors/local_timer_entry`
 * `sched/sched_switch`
-* `raw_syscalls/sys_enter` (might be aggressive)
 
 We can run barrierd with these tracepoints as follows:
 
