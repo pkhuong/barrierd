@@ -5,6 +5,9 @@
  * descriptor.  The buffering is fixed and preallocated in buf.  Any
  * line that spans more than 4K will be treated as EOF instead of
  * extending the buffer.
+ *
+ * TODO: fuzz this for lack of crashes / UB, + maybe correct splitting.
+ * TODO: unit test stateful interactions?
  */
 #include <stdbool.h>
 #include <stddef.h>

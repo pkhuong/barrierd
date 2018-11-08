@@ -36,6 +36,7 @@ struct barrierd_per_cpu {
 };
 
 struct barrierd_mapped_data {
+        /* TODO: add magic cookie? */
         uint64_t ncpu;  /* Number of CPUs in the system. */
         uint64_t vtime; /* Current virtual time. */
         /*

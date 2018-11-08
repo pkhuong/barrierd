@@ -6,6 +6,9 @@
  * map reads.
  *
  * Logs failure to stderr and returns silently on failure.
+ *
+ * TODO: consider per-fd permissions on lseek and read?
+ * TODO: should we abort unless insecure mode explicitly opted in?
  */
 void drop_privileges(void);
 #endif /* !DROP_H */

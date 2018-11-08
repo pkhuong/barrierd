@@ -53,6 +53,10 @@ struct parse_stat *parse_stat_create(size_t ncpu);
  *
  * If any movement is detected, the cpu's
  * per_cpu_stat.last_interrupt_ns is updated.
+ *
+ * TODO: unit test.
+ * TODO: fuzz for crashes
+ * TODO: consider switching to a pure character-at-a-time state machine.
  */
 void parse_stat_update(struct parse_stat *state, uint64_t now_ns);
 #endif /* !PARSE_STAT_H */
