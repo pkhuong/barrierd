@@ -1,4 +1,6 @@
-.PHONY: clean
+.PHONY: clean format tidy
+
+TIDY ?= clang-tidy
 
 CFLAGS+=-std=c99 -O2 -g -ggdb -D_GNU_SOURCE -Iinclude -W -Wall -pedantic     \
 	-Wundef -Wendif-labels -Wshadow -Wpointer-arith -Wcast-align	     \
@@ -48,3 +50,9 @@ license.o: LICENSE
 
 clean:
 	rm -rf *~ *.dSYM $(EXE) $(GENERATED) $(OBJECTS)
+
+format:
+	clang-format -i *.c $(HEADERS)
+
+tidy:
+	$(TIDY) *.c $(HEADERS) -- $(CFLAGS) -Wno-missing-field-initializers
