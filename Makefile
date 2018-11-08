@@ -12,12 +12,21 @@ HEADERS=include/barrierd.h	\
 	drop.h			\
 	ebpf_state.h		\
 	libbpf-macros.h		\
+	line_iterator.h		\
 	map.h			\
 	setup.h			\
 	signal.ebpf.inc
 
 GENERATED=license.c
-OBJECTS=attach.o barrierd.o drop.o license.o map.o setup.o
+
+OBJECTS=attach.o		\
+	barrierd.o		\
+	drop.o			\
+	license.o		\
+	line_iterator.o		\
+	map.o			\
+	setup.o
+
 SCRIPTS=signal.epbf.inc
 
 all: $(EXE)

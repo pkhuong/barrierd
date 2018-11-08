@@ -10,6 +10,7 @@
 #define ARRAY_SIZE(X) (sizeof(X) / sizeof((X)[0]))
 
 static const int fully_allowed_syscalls[] = {
+        SCMP_SYS(read),
         SCMP_SYS(clock_gettime),
         SCMP_SYS(clock_nanosleep),
         SCMP_SYS(epoll_wait_old),
@@ -77,6 +78,20 @@ static bool whitelist_bpf(void)
                                   "seccomp_rule_add (whitelist_bpf) failed");
 }
 
+/* Allow lseek(?, 0, SEEK_SET). */
+static bool whitelist_lseek(void)
+{
+        if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(lseek),
+                             2,
+                             SCMP_A1(SCMP_CMP_EQ, 0),
+                             SCMP_A2(SCMP_CMP_EQ, SEEK_SET)) >= 0) {
+                return true;
+        }
+
+        perror("seccomp_rule_add (whitelist_lseek) failed");
+        return false;
+}
+
 void drop_privileges(void)
 {
         ctx = seccomp_init(SCMP_ACT_KILL);
@@ -95,6 +110,10 @@ void drop_privileges(void)
         }
 
         if (!whitelist_bpf()) {
+                goto out;
+        }
+
+        if (!whitelist_lseek()) {
                 goto out;
         }
 
