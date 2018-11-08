@@ -22,7 +22,7 @@ A sample client is also available at `samples/client.c`.
 
 Runtime dependencies: Linux (>= 4.1x), the daemon is statically linked.
 
-Compile-time dependencies: xxd and libseccomp.
+Compile-time dependencies: concurrency kit, libseccomp, and xxd.
 
 How to use the daemon
 ---------------------
