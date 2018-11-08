@@ -158,4 +158,4 @@ eagerly tag items in the middle of a hot loop.  Once the client really
 waits on a barrier, virtual time can still be used to optimistically
 detect items that have passed a barrier. However, virtual time is
 slower to respond than real time, and is vulnerable to starvation; a
-client should only rely on real monotonic time to guarantee progress.
+client should always rely on real monotonic time to guarantee progress.
