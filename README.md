@@ -20,6 +20,10 @@ https://www.pvk.ca/XXX.
 
 A sample client is also available at `samples/client.c`.
 
+Runtime dependencies: Linux (>= 4.1x), the daemon is statically linked.
+
+Compile-time dependencies: xxd and libseccomp.
+
 How to use the daemon
 ---------------------
 
