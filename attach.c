@@ -31,8 +31,9 @@ void attach_to_tracepoint_id(const struct ebpf_state *state, int id)
          * However, software events disregard the CPU field, so we can
          * pick an arbitrary (valid) CPU.
          */
-        perf_fd = perf_event_open(&attr, /*pid=*/-1, /*cpu=*/0,
-                                  /*group=*/-1, /*flags=*/PERF_FLAG_FD_CLOEXEC);
+        perf_fd =
+            perf_event_open(&attr, /*pid=*/-1, /*cpu=*/0,
+                            /*group_fd=*/-1, /*flags=*/PERF_FLAG_FD_CLOEXEC);
         if (perf_fd < 0) {
                 perror("perf_event_open for tracepoint failed");
                 exit(1);
