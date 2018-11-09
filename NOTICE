@@ -1,8 +1,8 @@
-Copyright (c) 2018 Paul Khuong.
+barrierd Copyright (c) 2018 Paul Khuong (pvk@pvk.ca).
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+This project is licensed under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance with the
+License.  You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-This software project includes files under different licenses, or from
-other authors.
+This project bundles files under different licenses, or from other
+projects.
 
 - libbpf-macros.h is a subset of the file libbpf.h in iovisor's BCC
   (https://github.com/iovisor/bcc/). That file is copyright PLUMgrid,
@@ -41,7 +41,7 @@ other authors.
   02110-1301, USA.
 
   BSD License:
-  Copyright (c) 2018 Paul Khuong.
+  Copyright (c) 2018 Paul Khuong (pvk@pvk.ca).
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions

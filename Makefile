@@ -19,12 +19,12 @@ HEADERS=include/barrierd.h	\
 	parse_stat.h		\
 	setup.h
 
-GENERATED=license.c
+GENERATED=notice.c
 
 OBJECTS=attach.o		\
 	barrierd.o		\
 	drop.o			\
-	license.o		\
+	notice.o		\
 	line_iterator.o		\
 	map.o			\
 	parse_stat.o		\
@@ -43,10 +43,10 @@ barrierd: $(OBJECTS)
 %.o: %.c $(HEADERS) $(SCRIPTS)
 	$(CC) $(CFLAGS) -c $<
 
-license.o: LICENSE
+notice.o: NOTICE
 	@echo "Generating $@"
-	xxd -i LICENSE > license.c
-	$(CC) -c license.c
+	xxd -i NOTICE > notice.c
+	$(CC) -c notice.c
 
 clean:
 	rm -rf *~ *.dSYM $(EXE) $(GENERATED) $(OBJECTS)

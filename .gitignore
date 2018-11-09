@@ -1,6 +1,6 @@
 barrierd
 client
-license.c
+notice.c
 *.o
 *~
 *#
