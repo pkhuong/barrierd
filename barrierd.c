@@ -163,9 +163,9 @@ static bool update_timestamps(uint64_t vtime)
                                 ts, ts - prev);
                 }
 
-                ck_pr_store_64(&mapped_data->per_cpu[i].last_interrupt_ns, ts);
-                ck_pr_store_64(&mapped_data->per_cpu[i].last_interrupt_vtime,
-                               vtime);
+                wake_up(&mapped_data->per_cpu[i].last_interrupt_ns, ts);
+                wake_up(&mapped_data->per_cpu[i].last_interrupt_vtime,
+                        vtime);
         }
 
         ck_pr_fence_store();
