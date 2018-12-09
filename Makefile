@@ -35,7 +35,7 @@ SCRIPTS=signal.epbf.inc
 all: $(EXE)
 
 client: samples/client.c include/barrierd.h
-	$(CC) $(CFLAGS) samples/client.c -o client
+	$(CC) $(CFLAGS) samples/client.c -o client -lpthread
 
 barrierd: $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) -o barrierd -static -lseccomp

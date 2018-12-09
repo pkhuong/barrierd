@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <linux/futex.h>
 #include <linux/membarrier.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -18,6 +19,37 @@
 
 static void *page;
 static const struct barrierd_mapped_data *data;
+
+static void *worker(void *p)
+{
+        int r;
+
+        (void)p;
+        r = nice(10);
+        assert(r != -1);
+
+        for (;;) {
+                __asm__ volatile ("pause" ::: "memory");
+        }
+
+        return NULL;
+}
+
+static void setup_threads(void)
+{
+        long ncpu = sysconf(_SC_NPROCESSORS_ONLN);
+
+        assert(ncpu >= 1);
+        for (size_t i = 1; i < (size_t)ncpu; i++) {
+                pthread_t thread;
+                int r;
+
+                r = pthread_create(&thread, NULL, worker, NULL);
+                assert(r == 0);
+        }
+
+        return;
+}
 
 /* Returns the monotonic time (since boot) in nanoseconds. */
 static uint64_t now_ns(void)
@@ -174,6 +206,8 @@ int main(int argc, char **argv)
                     MAP_SHARED | MAP_ANONYMOUS, -1, 0);
         assert(page != MAP_FAILED);
 
+        setup_threads();
+
         for (;;) {
                 usleep(1e5 * random() / RAND_MAX);
                 wait_on_mprotect_ipi();
@@ -183,6 +217,8 @@ int main(int argc, char **argv)
                 wait_on_vtime_barrier();
                 usleep(1e5 * random() / RAND_MAX);
                 wait_on_membarrier(false);
+                usleep(1e5 * random() / RAND_MAX);
+                wait_on_membarrier(true);
         }
 
         return 0;
