@@ -16,7 +16,7 @@ any change to these fields.  Applications are thus able to wait for a
 barrier without spinning.
 
 More details on how interrupt timestamps are useful may be found at
-https://www.pvk.ca/XXX.
+https://www.pvk.ca/Blog/2019/01/09/preemption-is-gc-for-memory-reordering/.
 
 A sample client is also available at `samples/client.c`.
 
